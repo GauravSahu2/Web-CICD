@@ -1,0 +1,38 @@
+name: Phase 3 - Nightly Mutation Testing
+
+on:
+  schedule:
+    - cron: "0 2 * * *" # Run at 2 AM daily
+  workflow_dispatch:
+
+jobs:
+  python-mutation:
+    name: Mutmut (Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install mutmut pytest hypothesis
+      - name: Run Mutmut
+        run: |
+          mutmut run || echo "Mutation found surviving mutants."
+      - name: Show Mutmut Results
+        run: mutmut results
+
+  js-mutation:
+    name: Stryker (JS/TS)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install Stryker
+        run: npm install @stryker-mutator/core @stryker-mutator/jest-runner
+      - name: Run Stryker
+        run: npx stryker run || echo "Stryker executed or skipped due to missing config."

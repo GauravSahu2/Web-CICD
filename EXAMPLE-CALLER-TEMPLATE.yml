@@ -1,0 +1,17 @@
+# =================================================================================
+# COPY THIS FILE INTO ANY NEW PROJECT YOU BUILD IN THE FUTURE
+# Place it in your new project at: .github/workflows/main.yml
+# =================================================================================
+
+name: Enterprise Security Pipeline
+
+on:
+  push:
+    branches: ["main", "develop"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  execute-master-pipeline:
+    # This automatically connects your new project to your central Web-CiCd library!
+    uses: GauravSahu/Web-CiCd/.github/workflows/ci-cd.yml@main

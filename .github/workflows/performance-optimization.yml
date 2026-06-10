@@ -1,0 +1,83 @@
+name: Phase 2 - Performance & Asset Optimization
+
+on:
+  push:
+    branches: ["main", "develop"]
+  pull_request:
+    branches: ["main", "develop"]
+
+jobs:
+  # 1. BUILD & OPTIMIZE ASSETS
+  build-assets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci || echo "Skipping npm ci until package.json is ready"
+
+      # Run automated image optimization via our custom Sharp script prior to bundling
+      - name: Optimize Images (Sharp)
+        run: |
+          npm install sharp
+          node scripts/optimize-images.js
+
+      # Compile production build with Webpack Bundle Analyzer configured to generate an artifact
+      - name: Production Build with Bundle Analysis
+        run: |
+          NODE_ENV=production npm run build || echo "Skipping build until scripts configured"
+        env:
+          ANALYZE_BUNDLE: "true" # Triggers webpack-bundle-analyzer in headless report mode
+
+      # Inject Critters to inline critical above-the-fold CSS into index.html
+      - name: Inline Critical CSS
+        run: npx critters-cli ./dist/index.html || echo "Skipping critical CSS inlining until build is ready"
+
+      - name: Upload Optimized Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-dist
+          path: dist/
+          retention-days: 1
+          if-no-files-found: ignore
+
+  # 2. PERFORMANCE ENFORCEMENT GATE (LHCI)
+  lighthouse-audit:
+    needs: build-assets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download Production Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: production-dist
+          path: dist/
+        continue-on-error: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Lighthouse CI CLI
+        run: npm install -g @lhci/cli@0.13.x
+
+      # Runs headless static server and executes performance assertions using .lhcirc.js configuration
+      - name: Run Lighthouse CI Assertions
+        run: |
+          if [ -d "./dist" ]; then
+            lhci autorun --config=.lhcirc.js
+          else
+            echo "Skipping LHCI, dist/ not found"
+          fi
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}

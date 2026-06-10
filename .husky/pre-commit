@@ -1,0 +1,12 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo "Checking for hardcoded secrets with Gitleaks..."
+gitleaks protect --staged -v
+if [ $? -ne 0 ]; then
+  echo "Error: Hardcoded secrets detected! Commit blocked."
+  exit 1
+fi
+
+echo "Running Prettier and ESLint..."
+npx lint-staged
