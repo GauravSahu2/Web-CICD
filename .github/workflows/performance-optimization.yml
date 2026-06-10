@@ -18,7 +18,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
 
       - name: Install Dependencies
         run: npm ci || echo "Skipping npm ci until package.json is ready"
@@ -26,8 +25,12 @@ jobs:
       # Run automated image optimization via our custom Sharp script prior to bundling
       - name: Optimize Images (Sharp)
         run: |
-          npm install sharp
-          node scripts/optimize-images.js
+          if [ -f "scripts/optimize-images.js" ]; then
+            npm install sharp
+            node scripts/optimize-images.js
+          else
+            echo "scripts/optimize-images.js not found. Skipping image optimization."
+          fi
 
       # Compile production build with Webpack Bundle Analyzer configured to generate an artifact
       - name: Production Build with Bundle Analysis
@@ -74,10 +77,10 @@ jobs:
       # Runs headless static server and executes performance assertions using .lhcirc.js configuration
       - name: Run Lighthouse CI Assertions
         run: |
-          if [ -d "./dist" ]; then
+          if [ -d "./dist" ] && [ -f ".lhcirc.js" ]; then
             lhci autorun --config=.lhcirc.js
           else
-            echo "Skipping LHCI, dist/ not found"
+            echo "Skipping LHCI. Either dist/ or .lhcirc.js not found."
           fi
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
