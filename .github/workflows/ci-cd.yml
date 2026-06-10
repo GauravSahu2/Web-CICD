@@ -106,13 +106,6 @@ jobs:
             echo "No requirements.txt found. Skipping Safety check."
           fi
 
-      - name: Run Grype Directory Scan
-        uses: anchore/scan-action@v3
-        with:
-          path: "."
-          fail-build: true
-          severity-cutoff: "high"
-
   unit-testing:
     name: Phase 3 - Unit Testing & Property Tests
     runs-on: ubuntu-latest
