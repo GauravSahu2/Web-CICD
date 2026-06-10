@@ -284,7 +284,7 @@ jobs:
           fi
 
   accessibility-compliance:
-    name: Phase 12 - Accessibility (a11y) & Legal Compliance
+    name: Phase 9 - Accessibility (a11y) & Legal Compliance
     runs-on: ubuntu-latest
     needs: load-testing-and-chaos
     environment: staging
