@@ -212,6 +212,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run Hadolint (Dockerfile Security Linter)
+        if: hashFiles('Dockerfile') != ''
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: Dockerfile
@@ -235,10 +236,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build Docker Image
+        if: hashFiles('Dockerfile') != ''
         run: |
           docker build -t samarth-physiotherapy:${{ github.sha }} .
 
       - name: Run Trivy Vulnerability Scanner
+        if: hashFiles('Dockerfile') != ''
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: "samarth-physiotherapy:${{ github.sha }}"
