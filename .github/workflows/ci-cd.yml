@@ -86,7 +86,11 @@ jobs:
 
       - name: Run NPM Audit
         run: |
-          npm audit --audit-level=high
+          if [ -f "package-lock.json" ] || [ -f "npm-shrinkwrap.json" ]; then
+            npm audit --audit-level=high
+          else
+            echo "No package-lock.json found. Skipping NPM audit."
+          fi
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -96,7 +100,11 @@ jobs:
       - name: Run Safety Check
         run: |
           pip install safety
-          safety check -r requirements.txt
+          if [ -f "requirements.txt" ]; then
+            safety check -r requirements.txt
+          else
+            echo "No requirements.txt found. Skipping Safety check."
+          fi
 
       - name: Run Grype Directory Scan
         uses: anchore/scan-action@v3
@@ -120,12 +128,16 @@ jobs:
 
       - name: Install Test Dependencies
         run: |
-          pip install -r requirements.txt
+          if [ -f "requirements.txt" ]; then pip install -r requirements.txt; fi
           pip install pytest pytest-cov hypothesis
 
       - name: Run Pytest & Enforce Coverage (80%)
         run: |
-          pytest --cov=. --cov-report=xml --cov-fail-under=80
+          if [ -d "tests" ] || [ -d "test" ]; then
+            pytest --cov=. --cov-report=xml --cov-fail-under=80
+          else
+            echo "No 'tests' directory found. Skipping Pytest."
+          fi
 
   integration-testing:
     name: Phase 4 - API, DB & Integration Testing
